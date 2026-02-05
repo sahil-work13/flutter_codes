@@ -9,10 +9,10 @@ import '../ui/SplashScreen.dart';
 
 class AppPages {
   static final pages = [
-    GetPage(name: AppRoutes.splash, page: () => SplashPage(),),
-    GetPage(name: AppRoutes.login, page: () => Loginpage(),),
-    GetPage(name: AppRoutes.home, page: () => Homepage(),),
-    GetPage(name: AppRoutes.product, page: () => Productpage(),),
-    GetPage(name: AppRoutes.profile, page: () => Profilepage(),)
+    GetPage(name: AppRoutes.splash, page: () => SplashPage()),
+    GetPage(name: AppRoutes.login, page: () => Loginpage()),
+    GetPage(name: AppRoutes.home, page: () => Homepage()),
+    GetPage(name: AppRoutes.product, page: () => Productpage()),
+    GetPage(name: AppRoutes.profile, page: () => Profilepage()),
   ];
 }
