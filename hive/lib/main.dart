@@ -18,5 +18,5 @@ void main() async{
   Hive.registerAdapter(TodomodelAdapter());
   await Hive.openBox<Todomodel>("todo");
 
-  runApp(MaterialApp(home: Splash(),debugShowCheckedModeBanner: false,));
+  runApp(MaterialApp(home: Splash(),debugShowCheckedModeBanner: false));
 }
