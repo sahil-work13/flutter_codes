@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "711831209209",
+    "project_id": "fir-b08d8",
+    "storage_bucket": "fir-b08d8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711831209209:android:19ccb1c29caf810b2b0e28",
+        "android_client_info": {
+          "package_name": "com.sahil.firebase"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnhIAEWOb_IHXFi9es9fd7zN9lXbSwMic"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
