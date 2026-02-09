@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:product_app/controllers/auth_controller.dart';
+import 'package:product_app/ui/SignupPage.dart';
 
 class Loginpage extends StatefulWidget {
   const Loginpage({super.key});
@@ -17,6 +18,7 @@ class _LoginpageState extends State<Loginpage> {
 
   // Validation Key
   final _formKey = GlobalKey<FormState>();
+
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +117,7 @@ class _LoginpageState extends State<Loginpage> {
                       onPressed: () {
                         // Trigger Validation Logic
                         if (_formKey.currentState!.validate()) {
-                          auth.loginController(emailController.text);
+                          auth.loginController(emailController.text.trim(),passwordController.text.trim());
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -132,6 +134,10 @@ class _LoginpageState extends State<Loginpage> {
                       ),
                     ),
                   ),
+                  SizedBox(height: 30,),
+                  TextButton(onPressed: (){
+                    Get.offAll(Signuppage());
+                  }, child: Text("Create an Account"))
                 ],
               ),
             ),

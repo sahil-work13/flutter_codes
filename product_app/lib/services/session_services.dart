@@ -7,6 +7,12 @@ class SessionServices {
     await prefs.setString('email', email);
   }
 
+  static Future<void> saveSignupUser(String Signupemail,String SignupPassword) async{
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('Signupemail', Signupemail);
+    await prefs.setString('SignupPassword', SignupPassword);
+  }
+
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isLoggedIn') ?? false;

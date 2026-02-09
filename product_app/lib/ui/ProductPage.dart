@@ -107,7 +107,7 @@ class _ProductpageState extends State<Productpage> {
                               const Icon(Icons.star, color: Colors.blueAccent, size: 18),
                               const SizedBox(width: 4),
                               Text(
-                                "${product.rating}",
+                                "${product.rating?.rate}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blueAccent,
