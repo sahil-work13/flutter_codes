@@ -136,7 +136,7 @@ class _LoginpageState extends State<Loginpage> {
                   ),
                   SizedBox(height: 30,),
                   TextButton(onPressed: (){
-                    Get.offAll(Signuppage());
+                    Get.to(() => Signuppage());
                   }, child: Text("Create an Account"))
                 ],
               ),

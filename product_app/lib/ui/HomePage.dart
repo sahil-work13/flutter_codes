@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:product_app/controllers/product_controller.dart';
 import 'package:product_app/routes/app_routes.dart';
+import 'package:product_app/ui/ProfilePage.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -28,7 +29,7 @@ class _HomepageState extends State<Homepage> {
         foregroundColor: Colors.grey[800],
         actions: [
           IconButton(
-            onPressed: () => Get.toNamed(AppRoutes.profile),
+            onPressed: () => Get.off(Profilepage()),
             icon: const Icon(Icons.person_outline, color: Colors.blueAccent),
           ),
         ],

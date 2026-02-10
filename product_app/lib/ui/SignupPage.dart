@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_utils/src/get_utils/get_utils.dart';
 import 'package:product_app/controllers/auth_controller.dart';
 import 'package:product_app/ui/LoginPage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class Signuppage extends StatefulWidget {
   const Signuppage({super.key});
@@ -17,15 +15,19 @@ class _SignuppageState extends State<Signuppage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmpasswordController = TextEditingController();
+
   final _formKey = GlobalKey<FormState>();
-  final auth = AuthController();
+
+  // ✅ FIXED: DO NOT create controller manually
+  // ❌ final auth = AuthController();
+  final AuthController auth = Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "LOGIN",
+          "Signup",
           style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.w300),
         ),
         centerTitle: true,
@@ -47,14 +49,18 @@ class _SignuppageState extends State<Signuppage> {
         child: Center(
           child: SingleChildScrollView(
             child: Form(
-              key: _formKey, // Wrap in Form for validation
+              key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.shopping_bag_outlined, size: 60, color: Colors.blueAccent),
+                  const Icon(
+                    Icons.shopping_bag_outlined,
+                    size: 60,
+                    color: Colors.blueAccent,
+                  ),
                   const SizedBox(height: 40),
 
-                  // Email Field with Validation
+                  // Email
                   TextFormField(
                     controller: emailController,
                     keyboardType: TextInputType.emailAddress,
@@ -63,7 +69,10 @@ class _SignuppageState extends State<Signuppage> {
                       labelStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.8),
-                      prefixIcon: const Icon(Icons.email_outlined, color: Colors.blueAccent),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: Colors.blueAccent,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide.none,
@@ -73,16 +82,16 @@ class _SignuppageState extends State<Signuppage> {
                       if (value == null || value.isEmpty) {
                         return "Please enter your email";
                       }
-                      // Regular expression for email validation
                       if (!GetUtils.isEmail(value)) {
                         return "Enter a valid email address";
                       }
                       return null;
                     },
                   ),
+
                   const SizedBox(height: 20),
 
-                  // Password Field with Validation
+                  // Password
                   TextFormField(
                     controller: passwordController,
                     obscureText: true,
@@ -91,7 +100,10 @@ class _SignuppageState extends State<Signuppage> {
                       labelStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.8),
-                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.blueAccent),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: Colors.blueAccent,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide.none,
@@ -107,8 +119,10 @@ class _SignuppageState extends State<Signuppage> {
                       return null;
                     },
                   ),
+
                   const SizedBox(height: 20),
 
+                  // Confirm Password
                   TextFormField(
                     controller: confirmpasswordController,
                     obscureText: true,
@@ -117,7 +131,10 @@ class _SignuppageState extends State<Signuppage> {
                       labelStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.8),
-                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.blueAccent),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: Colors.blueAccent,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide.none,
@@ -125,30 +142,29 @@ class _SignuppageState extends State<Signuppage> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Please enter your password";
+                        return "Please confirm your password";
                       }
-                      if (value.length < 6) {
-                        return "Password must be at least 6 characters";
-                      }
-                      if(passwordController.text != confirmpasswordController.text){
-                        return "Password must be Same";
+                      if (passwordController.text !=
+                          confirmpasswordController.text) {
+                        return "Passwords must be the same";
                       }
                       return null;
                     },
                   ),
+
                   const SizedBox(height: 40),
 
-
-                  // Styled Login Button
+                  // Signup Button
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Trigger Validation Logic
+                      onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          auth.signupController(emailController.text.trim(), passwordController.text.trim());
-                          print("User Created");
+                          await auth.signupController(
+                            emailController.text.trim(),
+                            passwordController.text.trim(),
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -161,14 +177,22 @@ class _SignuppageState extends State<Signuppage> {
                       ),
                       child: const Text(
                         "Signup",
-                        style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
                       ),
                     ),
                   ),
-                  SizedBox(height: 30,),
-                  TextButton(onPressed: (){
-                    Get.off(Loginpage());
-                  }, child: Text("Already Signed Up ? Goto LoginPage"))
+
+                  const SizedBox(height: 30),
+
+                  TextButton(
+                    onPressed: () {
+                      Get.to(() => const Loginpage());
+                    },
+                    child: const Text("Already Signed Up ? Go to Login"),
+                  ),
                 ],
               ),
             ),

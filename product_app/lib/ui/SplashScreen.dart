@@ -14,18 +14,9 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    _navigateToNext();
   }
 
-  void _navigateToNext() async {
-    // Elegant delay to allow the animation to breathe
-    await Future.delayed(const Duration(seconds: 3));
-    final loggedIn = await SessionServices.isLoggedIn();
 
-    Get.offAllNamed(
-      loggedIn ? AppRoutes.home : AppRoutes.login,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,55 +1,69 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart'; // Added for Colors
 import 'package:get/get.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
-
-import '../routes/app_routes.dart';
-import '../services/session_services.dart';
+import 'package:product_app/ui/HomePage.dart';
+import 'package:product_app/ui/LoginPage.dart';
 
 class AuthController extends GetxController {
-  RxBool   isLoading = false.obs;
-  late FirebaseAuth _auth;
+  FirebaseAuth? _auth;
   Rxn<User> firebaseuser = Rxn<User>();
-
+  RxBool isLoading = true.obs;
 
   @override
-  Future<void> init() async {
+  void onInit() {
+    super.onInit();
+    startAuthListener();
+  }
+
+  void startAuthListener() {
     _auth = FirebaseAuth.instance;
-
-    firebaseuser.bindStream(_auth.authStateChanges());
-
-    ever(firebaseuser, (_) {
+    _auth!.authStateChanges().listen((user) {
+      firebaseuser.value = user;
       isLoading.value = false;
     });
   }
 
-  Future<void> loginController(String email,String password) async {
-    isLoading.value = true;
-
-    await Future.delayed(const Duration(seconds: 2));
-
-    //await SessionServices.saveUser(email);
-
-    UserCredential userCredential=await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-
-    isLoading.value = false;
-
-    Get.offAllNamed(AppRoutes.home); // ✅ FIXED
+  Future<void> signupController(String email, String password) async {
+    try {
+      _auth ??= FirebaseAuth.instance;
+      await _auth!.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      Get.offAll(() => const Loginpage());
+    } on FirebaseAuthException catch (e) {
+      // This will show you exactly what is wrong in a popup
+      Get.snackbar(
+        "Auth Error",
+        e.message ?? e.code,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
   }
 
-  Future<void> signupController(String Signupemail,String SignupPassword) async{
-    isLoading.value = true;
-
-    await Future.delayed(const Duration(seconds: 3));
-
-    //await SessionServices.saveSignupUser(Signupemail, SignupPassword);
-
-    UserCredential userCredential=await FirebaseAuth.instance.createUserWithEmailAndPassword(email: Signupemail, password: SignupPassword);
-
-    Get.offAllNamed(AppRoutes.login);
+  Future<void> loginController(String email, String password) async {
+    try {
+      _auth ??= FirebaseAuth.instance;
+      await _auth!.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      Get.offAll(() => const Homepage());
+    } on FirebaseAuthException catch (e) {
+      Get.snackbar(
+        "Login Error",
+        e.message ?? e.code,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+    }
   }
 
   Future<void> logoutController() async {
-    await _auth.signOut();
-    Get.offAllNamed(AppRoutes.login); // ✅ FIXED
+    await _auth?.signOut();
+    Get.offAll(() => const Loginpage());
   }
 }
