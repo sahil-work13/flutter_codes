@@ -2,6 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/AddStudent.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/DisplayStudent.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Profile.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Signup.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Dashboard.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/SplashScreen.dart';
+
 import 'package:fluttercrud/firebase_options.dart';
 import 'package:get/get.dart';
 
@@ -35,10 +42,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const CrudScreen(),
+      home: DashboardScreen(),
     );
   }
 }
