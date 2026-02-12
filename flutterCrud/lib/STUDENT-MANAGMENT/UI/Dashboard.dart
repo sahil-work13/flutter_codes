@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/AddStudent.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/DisplayStudent.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Profile.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -18,14 +21,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final Color slate500 = const Color(0xFF64748B);
   final Color scaffoldBg = const Color(0xFFF8FAFC);
 
+  // --- UPDATED: Navigation logic ---
+  // We use a function to return the list of pages to ensure
+  // we pass the correct 'isMobile' context to the Home content.
+  List<Widget> _getPages(bool isMobile) {
+    return [
+      _buildHomeContent(isMobile), // The actual Dashboard UI
+      const AddStudentPage(),
+       Displaystudent(),
+      const ProfilePage(),
+    ];
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Determine layout based on screen width
         final isMobile = constraints.maxWidth < 600;
         final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
-        final isDesktop = constraints.maxWidth >= 1200;
 
         if (isMobile) {
           return _buildMobileLayout();
@@ -36,24 +50,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // --- MOBILE LAYOUT (Bottom Navigation) ---
+  // --- MOBILE LAYOUT ---
   Widget _buildMobileLayout() {
     return Scaffold(
       backgroundColor: scaffoldBg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(isMobile: true),
-              const SizedBox(height: 24),
-              _buildStatCards(isMobile: true),
-              const SizedBox(height: 24),
-              _buildChartsSection(isMobile: true),
-            ],
-          ),
-        ),
+      // UPDATED: IndexedStack switches between your pages
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _getPages(true),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -66,14 +70,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.person_add), label: 'Add'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Students'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'View Students'),
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
         ],
       ),
     );
   }
 
-  // --- TABLET/DESKTOP LAYOUT (Side Navigation) ---
+  // --- TABLET/DESKTOP LAYOUT ---
   Widget _buildDesktopTabletLayout(bool isTablet) {
     return Scaffold(
       backgroundColor: scaffoldBg,
@@ -82,18 +86,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             _buildSidebar(isTablet),
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(isTablet ? 20.0 : 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(isMobile: false),
-                    const SizedBox(height: 32),
-                    _buildStatCards(isMobile: false, isTablet: isTablet),
-                    const SizedBox(height: 32),
-                    _buildChartsSection(isMobile: false),
-                  ],
-                ),
+              // UPDATED: IndexedStack switches between your pages
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: _getPages(false),
               ),
             ),
           ],
@@ -102,36 +98,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // --- UI COMPONENTS ---
+  // --- NEW: Dashboard Home Content ---
+  // This extracts your original design into a widget so it can be
+  // placed inside the _pages list without causing recursion.
+  Widget _buildHomeContent(bool isMobile) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(isMobile: isMobile),
+          SizedBox(height: isMobile ? 24 : 32),
+          _buildStatCards(isMobile: isMobile, isTablet: !isMobile && MediaQuery.of(context).size.width < 1200),
+          SizedBox(height: isMobile ? 24 : 32),
+          _buildChartsSection(isMobile: isMobile),
+        ],
+      ),
+    );
+  }
+
+  // --- EXISTING UI COMPONENTS (Unchanged Design) ---
 
   Widget _buildSidebar(bool isTablet) {
     return NavigationRail(
       backgroundColor: Colors.white,
       selectedIndex: _selectedIndex,
       onDestinationSelected: (int index) => setState(() => _selectedIndex = index),
-      labelType: isTablet
-          ? NavigationRailLabelType.selected
-          : NavigationRailLabelType.all,
+      labelType: isTablet ? NavigationRailLabelType.selected : NavigationRailLabelType.all,
       selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
       unselectedIconTheme: IconThemeData(color: slate500, size: 22),
       minWidth: isTablet ? 60 : 80,
       destinations: const [
-        NavigationRailDestination(
-          icon: Icon(Icons.dashboard),
-          label: Text('Home'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.person_add),
-          label: Text('Add'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.people),
-          label: Text('Students'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.account_circle),
-          label: Text('Profile'),
-        ),
+        NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Home')),
+        NavigationRailDestination(icon: Icon(Icons.person_add), label: Text('Add')),
+        NavigationRailDestination(icon: Icon(Icons.people), label: Text('Students')),
+        NavigationRailDestination(icon: Icon(Icons.account_circle), label: Text('Profile')),
       ],
     );
   }
@@ -151,10 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 4),
         Text(
           "Welcome back, Admin",
-          style: TextStyle(
-            fontSize: isMobile ? 14 : 16,
-            color: slate500,
-          ),
+          style: TextStyle(fontSize: isMobile ? 14 : 16, color: slate500),
         ),
       ],
     );
@@ -168,10 +166,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
 
     if (isMobile) {
-      // Stack vertically on mobile
       return Column(
-        children: stats
-            .map((stat) => Padding(
+        children: stats.map((stat) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: _buildSingleStatCard(
             stat["title"] as String,
@@ -180,17 +176,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             stat["color"] as Color,
             isMobile: true,
           ),
-        ))
-            .toList(),
+        )).toList(),
       );
     } else if (isTablet) {
-      // 2 columns on tablet with wrap
       final cardWidth = (MediaQuery.of(context).size.width - 120) / 2 - 16;
       return Wrap(
         spacing: 16,
         runSpacing: 16,
-        children: stats
-            .map((stat) => SizedBox(
+        children: stats.map((stat) => SizedBox(
           width: cardWidth,
           child: IntrinsicHeight(
             child: _buildSingleStatCard(
@@ -201,14 +194,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               isMobile: false,
             ),
           ),
-        ))
-            .toList(),
+        )).toList(),
       );
     } else {
-      // Row layout for desktop
       return Row(
-        children: stats
-            .map((stat) => Expanded(
+        children: stats.map((stat) => Expanded(
           child: Padding(
             padding: const EdgeInsets.only(right: 16),
             child: _buildSingleStatCard(
@@ -219,30 +209,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               isMobile: false,
             ),
           ),
-        ))
-            .toList(),
+        )).toList(),
       );
     }
   }
 
-  Widget _buildSingleStatCard(
-      String title,
-      String value,
-      IconData icon,
-      Color color, {
-        required bool isMobile,
-      }) {
+  Widget _buildSingleStatCard(String title, String value, IconData icon, Color color, {required bool isMobile}) {
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-          )
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,20 +235,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           SizedBox(height: isMobile ? 8 : 10),
           Text(
             value,
-            style: TextStyle(
-              fontSize: isMobile ? 18 : 20,
-              fontWeight: FontWeight.bold,
-              color: slate900,
-            ),
+            style: TextStyle(fontSize: isMobile ? 18 : 20, fontWeight: FontWeight.bold, color: slate900),
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
             title,
-            style: TextStyle(
-              color: slate500,
-              fontSize: isMobile ? 11 : 12,
-            ),
+            style: TextStyle(color: slate500, fontSize: isMobile ? 11 : 12),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
@@ -302,8 +273,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Expanded(
             child: LineChart(
               LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
+                gridData: const FlGridData(show: false),
+                titlesData: const FlTitlesData(show: false),
                 borderData: FlBorderData(show: false),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
@@ -323,13 +294,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     isCurved: true,
                     color: primaryColor,
                     barWidth: isMobile ? 3 : 4,
-                    dotData: FlDotData(show: false),
+                    dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
                       color: primaryColor.withOpacity(0.1),
                     ),
                   ),
-                  
                 ],
               ),
             ),
