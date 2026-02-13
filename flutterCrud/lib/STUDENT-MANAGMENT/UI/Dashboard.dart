@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/StudentController/StudentController.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/AddStudent.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/DisplayStudent.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Profile.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/model/StudentModel.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,290 +17,223 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  final Studentcontroller controller = Get.put(Studentcontroller());
 
-  // Production Palette
+  // --- OFFICIAL PRODUCTION PALETTE ---
   final Color primaryColor = const Color(0xFF6366F1);
   final Color slate900 = const Color(0xFF0F172A);
   final Color slate500 = const Color(0xFF64748B);
   final Color scaffoldBg = const Color(0xFFF8FAFC);
 
-  // --- UPDATED: Navigation logic ---
-  // We use a function to return the list of pages to ensure
-  // we pass the correct 'isMobile' context to the Home content.
+  final List<String> _pageTitles = [
+    "Dashboard Overview",
+    "Student Registration",
+    "Student Directory",
+    "My Profile"
+  ];
+
   List<Widget> _getPages(bool isMobile) {
     return [
-      _buildHomeContent(isMobile), // The actual Dashboard UI
+      _buildHomeContent(isMobile),
       const AddStudentPage(),
-       Displaystudent(),
+      Displaystudent(),
       const ProfilePage(),
     ];
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
-        final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
+    return LayoutBuilder(builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 600;
+      final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
 
-        if (isMobile) {
-          return _buildMobileLayout();
-        } else {
-          return _buildDesktopTabletLayout(isTablet);
-        }
-      },
-    );
-  }
-
-  // --- MOBILE LAYOUT ---
-  Widget _buildMobileLayout() {
-    return Scaffold(
-      backgroundColor: scaffoldBg,
-      // UPDATED: IndexedStack switches between your pages
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _getPages(true),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: primaryColor,
-        unselectedItemColor: slate500,
-        selectedFontSize: 12,
-        unselectedFontSize: 11,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_add), label: 'Add'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'View Students'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-        ],
-      ),
-    );
-  }
-
-  // --- TABLET/DESKTOP LAYOUT ---
-  Widget _buildDesktopTabletLayout(bool isTablet) {
-    return Scaffold(
-      backgroundColor: scaffoldBg,
-      body: SafeArea(
-        child: Row(
+      return Scaffold(
+        backgroundColor: scaffoldBg,
+        body: Row(
           children: [
-            _buildSidebar(isTablet),
+            if (!isMobile) _buildSidebar(isTablet),
             Expanded(
-              // UPDATED: IndexedStack switches between your pages
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: _getPages(false),
+              child: Column(
+                children: [
+                  _buildHeader(isMobile),
+                  Expanded(child: _getPages(isMobile)[_selectedIndex]),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // --- NEW: Dashboard Home Content ---
-  // This extracts your original design into a widget so it can be
-  // placed inside the _pages list without causing recursion.
-  Widget _buildHomeContent(bool isMobile) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(isMobile: isMobile),
-          SizedBox(height: isMobile ? 24 : 32),
-          _buildStatCards(isMobile: isMobile, isTablet: !isMobile && MediaQuery.of(context).size.width < 1200),
-          SizedBox(height: isMobile ? 24 : 32),
-          _buildChartsSection(isMobile: isMobile),
-        ],
-      ),
-    );
-  }
-
-  // --- EXISTING UI COMPONENTS (Unchanged Design) ---
-
-  Widget _buildSidebar(bool isTablet) {
-    return NavigationRail(
-      backgroundColor: Colors.white,
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (int index) => setState(() => _selectedIndex = index),
-      labelType: isTablet ? NavigationRailLabelType.selected : NavigationRailLabelType.all,
-      selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
-      unselectedIconTheme: IconThemeData(color: slate500, size: 22),
-      minWidth: isTablet ? 60 : 80,
-      destinations: const [
-        NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Home')),
-        NavigationRailDestination(icon: Icon(Icons.person_add), label: Text('Add')),
-        NavigationRailDestination(icon: Icon(Icons.people), label: Text('Students')),
-        NavigationRailDestination(icon: Icon(Icons.account_circle), label: Text('Profile')),
-      ],
-    );
-  }
-
-  Widget _buildHeader({required bool isMobile}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "System Overview",
-          style: TextStyle(
-            fontSize: isMobile ? 24 : 28,
-            fontWeight: FontWeight.bold,
-            color: slate900,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          "Welcome back, Admin",
-          style: TextStyle(fontSize: isMobile ? 14 : 16, color: slate500),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCards({required bool isMobile, bool isTablet = false}) {
-    final stats = [
-      {"title": "Total Students", "value": "1,284", "icon": Icons.people, "color": Colors.blue},
-      {"title": "Graduated", "value": "450", "icon": Icons.school, "color": Colors.green},
-      {"title": "Attendance", "value": "92%", "icon": Icons.check_circle, "color": Colors.orange},
-    ];
-
-    if (isMobile) {
-      return Column(
-        children: stats.map((stat) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildSingleStatCard(
-            stat["title"] as String,
-            stat["value"] as String,
-            stat["icon"] as IconData,
-            stat["color"] as Color,
-            isMobile: true,
-          ),
-        )).toList(),
+        bottomNavigationBar: isMobile ? _buildBottomNav() : null,
       );
-    } else if (isTablet) {
-      final cardWidth = (MediaQuery.of(context).size.width - 120) / 2 - 16;
-      return Wrap(
-        spacing: 16,
-        runSpacing: 16,
-        children: stats.map((stat) => SizedBox(
-          width: cardWidth,
-          child: IntrinsicHeight(
-            child: _buildSingleStatCard(
-              stat["title"] as String,
-              stat["value"] as String,
-              stat["icon"] as IconData,
-              stat["color"] as Color,
-              isMobile: false,
-            ),
-          ),
-        )).toList(),
-      );
-    } else {
-      return Row(
-        children: stats.map((stat) => Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: _buildSingleStatCard(
-              stat["title"] as String,
-              stat["value"] as String,
-              stat["icon"] as IconData,
-              stat["color"] as Color,
-              isMobile: false,
-            ),
-          ),
-        )).toList(),
-      );
-    }
+    });
   }
 
-  Widget _buildSingleStatCard(String title, String value, IconData icon, Color color, {required bool isMobile}) {
+  Widget _buildHeader(bool isMobile) {
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.1),
-            radius: isMobile ? 18 : 20,
-            child: Icon(icon, color: color, size: isMobile ? 18 : 20),
-          ),
-          SizedBox(height: isMobile ? 8 : 10),
-          Text(
-            value,
-            style: TextStyle(fontSize: isMobile ? 18 : 20, fontWeight: FontWeight.bold, color: slate900),
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: TextStyle(color: slate500, fontSize: isMobile ? 11 : 12),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChartsSection({required bool isMobile}) {
-    return Container(
-      height: isMobile ? 250 : 300,
-      padding: EdgeInsets.all(isMobile ? 16 : 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 40, vertical: 24),
+      alignment: Alignment.centerLeft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Enrollment Trends",
+            _pageTitles[_selectedIndex], // Dynamic Title based on index
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: slate900,
-              fontSize: isMobile ? 16 : 18,
+                fontSize: isMobile ? 24 : 32,
+                fontWeight: FontWeight.bold,
+                color: slate900
             ),
           ),
-          SizedBox(height: isMobile ? 16 : 20),
+          const SizedBox(height: 4),
+          Text(
+              _selectedIndex == 0
+                  ? "Real-time performance metrics"
+                  : "Manage your system records",
+              style: TextStyle(color: slate500, fontSize: 14)
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeContent(bool isMobile) {
+    return Obx(() {
+      final students = controller.students;
+
+      // DYNAMIC STATS
+      final total = students.length;
+      final graduated = students.where((s) => s.isGraduated).length;
+      final activeSubjects = students.expand((s) => s.subjects).toSet().length;
+
+      return SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40),
+        child: Column(
+          children: [
+            // Dynamic Cards with proper sizing
+            Wrap(
+              spacing: 24,
+              runSpacing: 24,
+              children: [
+                _buildStatCard("Total Students", total.toString(), Icons.people_rounded, isMobile),
+                _buildStatCard("Active Subjects", activeSubjects.toString(), Icons.auto_awesome_mosaic_rounded, isMobile),
+                _buildStatCard("Success Rate", "${total == 0 ? 0 : ((graduated/total)*100).toInt()}%", Icons.insights_rounded, isMobile),
+              ],
+            ),
+            const SizedBox(height: 40),
+            // Corrected Aesthetic Line Chart
+            _buildAestheticLineChart(isMobile, students),
+            const SizedBox(height: 40),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, bool isMobile) {
+    final isHovered = false.obs;
+    return Obx(() => MouseRegion(
+      onEnter: (_) => isHovered.value = true,
+      onExit: (_) => isHovered.value = false,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: isMobile ? double.infinity : 280,
+        padding: const EdgeInsets.all(24),
+        transform: isHovered.value ? (Matrix4.identity()..translate(0, -10, 0)) : Matrix4.identity(),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: isHovered.value ? primaryColor.withOpacity(0.1) : Colors.black.withOpacity(0.02),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: primaryColor, size: 32),
+            const SizedBox(height: 20),
+            Text(value, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: slate900)),
+            Text(title, style: TextStyle(color: slate500, fontWeight: FontWeight.w500, fontSize: 14)),
+          ],
+        ),
+      ),
+    ));
+  }
+
+  // --- DYNAMIC LINE CHART (Corrected & Aesthetic) ---
+  Widget _buildAestheticLineChart(bool isMobile, List<StudentModel> students) {
+    // Generate Last 6 Months Labels and Data
+    List<DateTime> months = List.generate(6, (i) => DateTime.now().subtract(Duration(days: i * 30))).reversed.toList();
+    List<FlSpot> spots = [];
+
+    for (int i = 0; i < months.length; i++) {
+      double count = students.where((s) => s.joinedAt.month == months[i].month && s.joinedAt.year == months[i].year).length.toDouble();
+      spots.add(FlSpot(i.toDouble(), count));
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 32, 32, 20), // Added padding for labels
+      height: 400,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 40)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Text("Registration Trends", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: slate900)),
+          ),
+          const SizedBox(height: 40),
           Expanded(
             child: LineChart(
               LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: const FlTitlesData(show: false),
+                gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey[100], strokeWidth: 1)),
                 borderData: FlBorderData(show: false),
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (touchedSpot) => primaryColor.withOpacity(0.8),
+                titlesData: FlTitlesData(
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: TextStyle(color: slate500, fontSize: 12)),
+                      )
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 32,
+                      getTitlesWidget: (val, meta) {
+                        int idx = val.toInt();
+                        if (idx < 0 || idx >= months.length) return const SizedBox();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(DateFormat('MMM').format(months[idx]), style: TextStyle(color: slate500, fontWeight: FontWeight.bold, fontSize: 12)),
+                        );
+                      },
+                    ),
                   ),
                 ),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 3),
-                      FlSpot(2, 5),
-                      FlSpot(4, 4),
-                      FlSpot(6, 8),
-                      FlSpot(8, 6),
-                      FlSpot(10, 9),
-                    ],
+                    spots: spots.isEmpty ? [const FlSpot(0,0)] : spots,
                     isCurved: true,
                     color: primaryColor,
-                    barWidth: isMobile ? 3 : 4,
-                    dotData: const FlDotData(show: false),
+                    barWidth: 4,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: primaryColor.withOpacity(0.1),
+                      gradient: LinearGradient(
+                        colors: [primaryColor.withOpacity(0.2), primaryColor.withOpacity(0.0)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
                     ),
                   ),
                 ],
@@ -306,6 +242,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSidebar(bool isTablet) {
+    return Container(
+      width: isTablet ? 80 : 250,
+      decoration: BoxDecoration(border: Border(right: BorderSide(color: Colors.grey[100]!))),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            child: Column(
+              children: [
+                Icon(Icons.school_rounded, color: primaryColor, size: 40),
+                if (!isTablet) ...[
+                  const SizedBox(height: 8),
+                  Text("STUDENT", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: slate900, letterSpacing: 1.5)),
+                  Text("MANAGEMENT", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: primaryColor)),
+                ]
+              ],
+            ),
+          ),
+          Expanded(
+            child: NavigationRail(
+              extended: !isTablet,
+              backgroundColor: Colors.white,
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+              destinations: const [
+                NavigationRailDestination(icon: Icon(Icons.dashboard_rounded), label: Text("Dashboard")),
+                NavigationRailDestination(icon: Icon(Icons.person_add_rounded), label: Text("Registration")),
+                NavigationRailDestination(icon: Icon(Icons.view_list_rounded), label: Text("Directory")),
+                NavigationRailDestination(icon: Icon(Icons.account_circle_rounded), label: Text("Profile")),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return BottomNavigationBar(
+      currentIndex: _selectedIndex,
+      onTap: (index) => setState(() => _selectedIndex = index),
+      selectedItemColor: primaryColor,
+      unselectedItemColor: slate500,
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: Colors.white,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.person_add_rounded), label: "Add"),
+        BottomNavigationBarItem(icon: Icon(Icons.view_list_rounded), label: "List"),
+        BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: "Me"),
+      ],
     );
   }
 }

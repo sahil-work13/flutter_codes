@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/StudentController/StudentController.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Signup.dart';
 import 'package:get/get.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -26,20 +27,7 @@ class ProfilePage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: scaffoldBg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          "My Profile",
-          style: TextStyle(
-            color: slate900,
-            fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 18 : 20,
-          ),
-        ),
-        centerTitle: true,
 
-      ),
       body: SingleChildScrollView(
         child: Center(
           child: Container(
@@ -243,7 +231,7 @@ class ProfilePage extends StatelessWidget {
       buttonColor: Colors.redAccent,
       onConfirm: () {
         FirebaseAuth.instance.signOut();
-        Get.offAllNamed('/signup'); // Or your signup route
+        Get.off(() => Signup()); // Or your signup route
       },
     );
   }

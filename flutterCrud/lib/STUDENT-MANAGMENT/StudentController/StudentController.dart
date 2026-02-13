@@ -49,6 +49,12 @@ class Studentcontroller extends GetxController{
     isLoading.value = false;
   }
 
+  Future<void> deleteStudent(String id) async{
+    //isLoading.value = true;
+    await _service.removeStudent(id);
+    //isLoading.value = false;
+  }
+
   void getStudentsForDisplay() {
     isLoading.value = true;
 
@@ -56,6 +62,13 @@ class Studentcontroller extends GetxController{
       _service.getStudent(), // Stream<List<StudentModel>>
     );
 
+    isLoading.value = false;
+  }
+
+  //update
+  Future<void> updateStudent(StudentModel student) async {
+    isLoading.value = true;
+    await _service.updateStudent(student);
     isLoading.value = false;
   }
 

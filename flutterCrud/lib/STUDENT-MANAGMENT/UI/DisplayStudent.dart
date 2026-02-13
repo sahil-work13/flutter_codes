@@ -1,6 +1,8 @@
-import 'dart:ui'; // Required for ImageFilter (Blur)
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/StudentController/StudentController.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/UI/AddStudent.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/model/StudentModel.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -19,19 +21,6 @@ class Displaystudent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: scaffoldBg,
-      appBar: AppBar(
-        title: Text(
-          "Student Directory",
-          style: TextStyle(
-            color: slate900,
-            fontWeight: FontWeight.bold,
-            fontSize: MediaQuery.of(context).size.width < 600 ? 18 : 20,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -46,11 +35,7 @@ class Displaystudent extends StatelessWidget {
                     if (controller.isLoading.value) {
                       return const Center(child: CircularProgressIndicator());
                     }
-
-                    final results = controller.students.where((s) =>
-                        s.name.toLowerCase().contains(controller.searchQuery.value.toLowerCase())
-                    ).toList();
-
+                    final results = controller.filteredStudents;
                     if (results.isEmpty) {
                       return const Center(child: Text("No students found."));
                     }
@@ -90,7 +75,7 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  Widget _buildStudentList(List results, BuildContext context, bool isMobile, bool isTablet) {
+  Widget _buildStudentList(List<StudentModel> results, BuildContext context, bool isMobile, bool isTablet) {
     return Center(
       child: Container(
         constraints: BoxConstraints(
@@ -103,7 +88,7 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  Widget _buildListView(List results, BuildContext context, bool isMobile) {
+  Widget _buildListView(List<StudentModel> results, BuildContext context, bool isMobile) {
     return ListView.builder(
       padding: EdgeInsets.all(isMobile ? 16 : 20),
       itemCount: results.length,
@@ -117,7 +102,7 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  Widget _buildGridView(List results, BuildContext context) {
+  Widget _buildGridView(List<StudentModel> results, BuildContext context) {
     return GridView.builder(
       padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -137,15 +122,55 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  // --- OVERLAP DETAIL VIEW LOGIC ---
-  void _showStudentDetails(BuildContext context, dynamic student) {
+  // --- UPDATED DELETE LOGIC TO PREVENT ENGINE EXCEPTION ---
+  void _confirmDelete(BuildContext context, StudentModel student) {
+    Get.defaultDialog(
+      title: "Delete Student",
+      middleText: "Are you sure you want to delete ${student.name}?",
+      textConfirm: "Delete",
+      textCancel: "Cancel",
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.redAccent,
+      onConfirm: () async {
+        if (student.id != null) {
+          // 1. Close Confirmation Dialog immediately
+          Get.back();
+
+          // 2. Wait for the confirmation dialog animation to finish (approx 300ms)
+          // This prevents the "Engine Disposed" error and the lag.
+          await Future.delayed(const Duration(milliseconds: 300));
+
+          // 3. Close the Student Detail card
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
+
+          // 4. Wait for the detail card blur animation to fade out
+          await Future.delayed(const Duration(milliseconds: 300));
+
+          // 5. NOW perform the actual deletion
+          // By doing it now, the background list updates AFTER the dialogs are gone.
+          await controller.deleteStudent(student.id!);
+
+          Get.snackbar(
+            "Success",
+            "${student.name} deleted",
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      },
+    );
+  }
+
+  void _showStudentDetails(BuildContext context, StudentModel student) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
       barrierLabel: "Dismiss",
       barrierColor: Colors.black.withOpacity(0.4),
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, anim1, anim2) {
+      pageBuilder: (dialogContext, anim1, anim2) {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Center(
@@ -157,9 +182,6 @@ class Displaystudent extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 20, offset: const Offset(0, 10))
-                ],
               ),
               child: Material(
                 color: Colors.transparent,
@@ -170,17 +192,37 @@ class Displaystudent extends StatelessWidget {
                       top: 0,
                       child: IconButton(
                         icon: Icon(Icons.close, color: slate500),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.pop(dialogContext),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit_outlined, color: primaryColor),
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                              Get.to(() => const AddStudentPage(), arguments: student);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                            onPressed: () => _confirmDelete(dialogContext, student),
+                          ),
+                        ],
                       ),
                     ),
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        const SizedBox(height: 45),
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: primaryColor.withOpacity(0.1),
                           child: Text(
-                            student.name[0].toUpperCase(),
+                            student.name.isNotEmpty ? student.name[0].toUpperCase() : "?",
                             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: primaryColor),
                           ),
                         ),
@@ -211,7 +253,7 @@ class Displaystudent extends StatelessWidget {
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: (student.subjects as List<String>).map((s) => Container(
+                              children: student.subjects.map((s) => Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: scaffoldBg,
@@ -255,7 +297,7 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  Widget _buildStudentItem(dynamic student, bool isMobile) {
+  Widget _buildStudentItem(StudentModel student, bool isMobile) {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
@@ -270,10 +312,8 @@ class Displaystudent extends StatelessWidget {
             CircleAvatar(
               radius: isMobile ? 22 : 25,
               backgroundColor: primaryColor.withOpacity(0.1),
-              child: Text(
-                student.name[0],
-                style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 18),
-              ),
+              child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : "?",
+                  style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 18)),
             ),
             SizedBox(width: isMobile ? 12 : 16),
             Expanded(
@@ -293,30 +333,28 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  Widget _buildStudentCard(dynamic student) {
+  Widget _buildStudentCard(StudentModel student) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: primaryColor.withOpacity(0.1),
-              child: Text(student.name[0], style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-            ),
-            const SizedBox(height: 12),
-            Text(student.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: slate900), overflow: TextOverflow.ellipsis),
-            Text("Age: ${student.age}", style: TextStyle(fontSize: 11, color: slate500)),
-            const Spacer(),
-            _buildStatusBadge(student.isGraduated, false),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: primaryColor.withOpacity(0.1),
+            child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : "?", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 12),
+          Text(student.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: slate900), overflow: TextOverflow.ellipsis),
+          Text("Age: ${student.age}", style: TextStyle(fontSize: 11, color: slate500)),
+          const Spacer(),
+          _buildStatusBadge(student.isGraduated, false),
+        ],
       ),
     );
   }
@@ -324,10 +362,7 @@ class Displaystudent extends StatelessWidget {
   Widget _buildStatusBadge(bool isGraduated, bool isMobile) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8, vertical: isMobile ? 3 : 4),
-      decoration: BoxDecoration(
-        color: isGraduated ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: isGraduated ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
       child: Text(
         isGraduated ? "GRADUATED" : "IN PROGRESS",
         style: TextStyle(color: isGraduated ? Colors.green[700] : Colors.orange[700], fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.bold),
