@@ -36,7 +36,9 @@ class DashboardScreen extends StatelessWidget { // Changed to StatelessWidget
   @override
   Widget build(BuildContext context) {
     // Access the controller
-    final Studentcontroller controller = Get.find<Studentcontroller>();
+    final Studentcontroller controller =
+    Get.put(Studentcontroller());
+
 
     return LayoutBuilder(builder: (context, constraints) {
       final isMobile = constraints.maxWidth < 600;
@@ -94,7 +96,9 @@ class DashboardScreen extends StatelessWidget { // Changed to StatelessWidget
   }
 
   Widget _buildHomeContent(bool isMobile) {
-    final Studentcontroller controller = Get.find<Studentcontroller>();
+    final Studentcontroller controller =
+    Get.put(Studentcontroller());
+
     return Obx(() {
       final students = controller.students;
 

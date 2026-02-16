@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttercrud/STUDENT-MANAGMENT/StudentController/StudentController.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/AddStudent.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/DisplayStudent.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Profile.dart';
@@ -22,6 +23,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+   Get.put(Studentcontroller()); 
+  
   // 3. Web-specific Firestore fix
   if (kIsWeb) {
     FirebaseFirestore.instance.settings = const Settings(

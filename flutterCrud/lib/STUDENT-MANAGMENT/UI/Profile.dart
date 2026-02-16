@@ -17,7 +17,9 @@ class ProfilePage extends StatelessWidget {
     // Access the current logged-in user session
     final User? user = FirebaseAuth.instance.currentUser;
     // Find the existing controller for logout logic
-    final Studentcontroller controller = Get.find<Studentcontroller>();
+    final Studentcontroller controller =
+    Get.put(Studentcontroller());
+
 
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -55,39 +57,53 @@ class ProfilePage extends StatelessWidget {
     return Column(
       children: [
         Stack(
+          // Use Stack to place the 'Edit' icon over the photo
+          alignment: Alignment.bottomRight,
           children: [
             Container(
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: primaryColor.withOpacity(0.2), width: 4),
+                border: Border.all(
+                  color: primaryColor.withOpacity(0.2),
+                  width: 4,
+                ),
               ),
               child: CircleAvatar(
-                radius: isMobile ? 50 : 60,
-                backgroundColor: Colors.white,
-                backgroundImage: user?.photoURL != null
-                    ? NetworkImage(user!.photoURL!)
+                radius: isMobile ? 50 : 65,
+                backgroundColor: primaryColor,
+                // --- FIX: Logic to handle Image vs Icon properly ---
+                backgroundImage:
+                    (user?.photoURL != null && user!.photoURL!.isNotEmpty)
+                    ? NetworkImage(user.photoURL!)
                     : null,
-                child: user?.photoURL == null
-                    ? Icon(Icons.person, size: isMobile ? 50 : 60, color: Colors.black)
-                    : Icon(Icons.person, size: isMobile ? 50 : 60, color: Colors.black),
+                child: (user?.photoURL == null || user!.photoURL!.isEmpty)
+                    ? Text(
+                        user?.email?.substring(0, 1).toUpperCase() ?? "U",
+                        style: TextStyle(
+                          fontSize: isMobile ? 40 : 50,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null, // Set child to null if image exists to prevent overlapping
               ),
             ),
+            // Optional: A small edit badge to make it look professional
             Positioned(
-              bottom: 0,
-              right: 0,
+              right: 4,
+              bottom: 4,
               child: Container(
-                padding:
-
-
-                EdgeInsets.all(8),
-                decoration:  BoxDecoration(
-                  color: primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.camera_alt,
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  size: 18,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  size: isMobile ? 16 : 20,
+                  color: primaryColor,
                 ),
               ),
             ),
@@ -95,20 +111,19 @@ class ProfilePage extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Text(
-          user?.displayName ?? "Admin User", // Shows Google Name or Default
+          user?.displayName ?? "Student User",
           style: TextStyle(
-            fontSize: isMobile ? 22 : 26,
+            fontSize: isMobile ? 24 : 32,
             fontWeight: FontWeight.bold,
             color: slate900,
           ),
         ),
-        const SizedBox(height: 4),
         Text(
-          "System Administrator",
+          "Student ID: ${user?.uid.substring(0, 8).toUpperCase() ?? "N/A"}",
           style: TextStyle(
             fontSize: isMobile ? 14 : 16,
             color: slate500,
-            letterSpacing: 0.5,
+            letterSpacing: 1.1,
           ),
         ),
       ],
@@ -147,7 +162,8 @@ class ProfilePage extends StatelessWidget {
           _buildInfoTile(
             Icons.verified_user_outlined,
             "User ID",
-            user?.uid.substring(0, 8).toUpperCase() ?? "NOTSET", // Unique ID segment
+            user?.uid.substring(0, 8).toUpperCase() ??
+                "NOTSET", // Unique ID segment
             isMobile,
           ),
         ],
@@ -156,11 +172,11 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildInfoTile(
-      IconData icon,
-      String label,
-      String value,
-      bool isMobile,
-      ) {
+    IconData icon,
+    String label,
+    String value,
+    bool isMobile,
+  ) {
     return ListTile(
       contentPadding: EdgeInsets.symmetric(
         horizontal: isMobile ? 12 : 16,
@@ -172,18 +188,11 @@ class ProfilePage extends StatelessWidget {
           color: primaryColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color: primaryColor,
-          size: isMobile ? 20 : 22,
-        ),
+        child: Icon(icon, color: primaryColor, size: isMobile ? 20 : 22),
       ),
       title: Text(
         label,
-        style: TextStyle(
-          fontSize: isMobile ? 11 : 12,
-          color: slate500,
-        ),
+        style: TextStyle(fontSize: isMobile ? 11 : 12, color: slate500),
       ),
       subtitle: Text(
         value,
@@ -196,7 +205,11 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoutButton(Studentcontroller controller, bool isMobile, double screenHeight) {
+  Widget _buildLogoutButton(
+    Studentcontroller controller,
+    bool isMobile,
+    double screenHeight,
+  ) {
     return OutlinedButton(
       // Now connected to your logout logic
       onPressed: () => _showLogoutDialog(controller),
