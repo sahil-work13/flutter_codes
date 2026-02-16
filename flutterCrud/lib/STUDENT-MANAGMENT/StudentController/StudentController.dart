@@ -5,25 +5,32 @@ import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Signup.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/model/StudentModel.dart';
 import 'package:get/get.dart';
 
-class Studentcontroller extends GetxController{
+class Studentcontroller extends GetxController {
   var students = <StudentModel>[].obs;
   var isLoading = false.obs;
-  final Studentservices _service =Studentservices();
+  final Studentservices _service = Studentservices();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   var searchQuery = "".obs;
 
-  void onInit(){
+  // --- ADDED THIS LINE: The missing variable ---
+  var selectedIndex = 0.obs; 
+
+  @override
+  void onInit() {
     students.bindStream(_service.getStudent());
     super.onInit();
+  }
+
+  // --- ADDED THIS METHOD: To handle global tab switching ---
+  void changeTab(int index) {
+    selectedIndex.value = index;
   }
 
   Future<void> signInWithGoogle() async {
     try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-
       await FirebaseAuth.instance.signInWithPopup(googleProvider);
-      Get.off(() => DashboardScreen());
-
+      Get.offAll(() => const DashboardScreen());
     } on FirebaseAuthException catch (e) {
       print("Google Sign-In Error: ${e.code}");
     } catch (e) {
@@ -43,49 +50,33 @@ class Studentcontroller extends GetxController{
     }
   }
 
-  Future<void> add(StudentModel students) async{
+  Future<void> add(StudentModel student) async {
     isLoading.value = true;
-    await _service.addStudent(students);
+    await _service.addStudent(student);
     isLoading.value = false;
+    // Automatically switch to List tab after adding
+    changeTab(2); 
   }
 
-  Future<void> deleteStudent(String id) async{
-    //isLoading.value = true;
+  Future<void> deleteStudent(String id) async {
     await _service.removeStudent(id);
-    //isLoading.value = false;
   }
 
-  void getStudentsForDisplay() {
-    isLoading.value = true;
-
-    students.bindStream(
-      _service.getStudent(), // Stream<List<StudentModel>>
-    );
-
-    isLoading.value = false;
-  }
-
-  //update
   Future<void> updateStudent(StudentModel student) async {
     isLoading.value = true;
     await _service.updateStudent(student);
     isLoading.value = false;
+    // Automatically switch to List tab after updating
+    changeTab(2);
   }
 
-  //search
   List<StudentModel> get filteredStudents {
     if (searchQuery.isEmpty) {
       return students;
     } else {
-      return students
-          .where((s) => s.name.toLowerCase().contains(searchQuery.value.toLowerCase()))
-          .toList();
+      return students.where((student) {
+        return student.name.toLowerCase().contains(searchQuery.value.toLowerCase());
+      }).toList();
     }
-  }
-
-// Method for Logout
-  Future<void> logout() async {
-    await _auth.signOut();
-    Get.offAll(() => const Signup());
   }
 }

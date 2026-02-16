@@ -25,7 +25,8 @@ class Displaystudent extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isMobile = constraints.maxWidth < 600;
-            final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
+            final isTablet =
+                constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
 
             return Column(
               children: [
@@ -39,7 +40,12 @@ class Displaystudent extends StatelessWidget {
                     if (results.isEmpty) {
                       return const Center(child: Text("No students found."));
                     }
-                    return _buildStudentList(results, context, isMobile, isTablet);
+                    return _buildStudentList(
+                      results,
+                      context,
+                      isMobile,
+                      isTablet,
+                    );
                   }),
                 ),
               ],
@@ -75,7 +81,12 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  Widget _buildStudentList(List<StudentModel> results, BuildContext context, bool isMobile, bool isTablet) {
+  Widget _buildStudentList(
+    List<StudentModel> results,
+    BuildContext context,
+    bool isMobile,
+    bool isTablet,
+  ) {
     return Center(
       child: Container(
         constraints: BoxConstraints(
@@ -88,7 +99,11 @@ class Displaystudent extends StatelessWidget {
     );
   }
 
-  Widget _buildListView(List<StudentModel> results, BuildContext context, bool isMobile) {
+  Widget _buildListView(
+    List<StudentModel> results,
+    BuildContext context,
+    bool isMobile,
+  ) {
     return ListView.builder(
       padding: EdgeInsets.all(isMobile ? 16 : 20),
       itemCount: results.length,
@@ -176,9 +191,13 @@ class Displaystudent extends StatelessWidget {
           child: Center(
             child: Container(
               margin: const EdgeInsets.all(24),
-              padding: const EdgeInsets.all(24),
-              width: MediaQuery.of(context).size.width * 0.9,
-              constraints: const BoxConstraints(maxWidth: 500),
+              // Use constrained height to prevent overflow on small screens
+              constraints: BoxConstraints(
+                maxWidth: 500,
+                maxHeight:
+                    MediaQuery.of(context).size.height *
+                    0.8, // Limit height to 80% of screen
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
@@ -187,85 +206,154 @@ class Displaystudent extends StatelessWidget {
                 color: Colors.transparent,
                 child: Stack(
                   children: [
+                    // Persistent Header Buttons (Edit/Delete/Close)
                     Positioned(
-                      right: 0,
-                      top: 0,
+                      right: 12,
+                      top: 12,
                       child: IconButton(
                         icon: Icon(Icons.close, color: slate500),
                         onPressed: () => Navigator.pop(dialogContext),
                       ),
                     ),
                     Positioned(
-                      left: 0,
-                      top: 0,
+                      left: 12,
+                      top: 12,
                       child: Row(
                         children: [
                           IconButton(
-                            icon: Icon(Icons.edit_outlined, color: primaryColor),
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              color: primaryColor,
+                            ),
                             onPressed: () {
                               Navigator.pop(dialogContext);
-                              Get.to(() => const AddStudentPage(), arguments: student);
+                              Get.to(
+                                () => const AddStudentPage(),
+                                arguments: student,
+                              );
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                            onPressed: () => _confirmDelete(dialogContext, student),
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              color: Colors.redAccent,
+                            ),
+                            onPressed: () =>
+                                _confirmDelete(dialogContext, student),
                           ),
                         ],
                       ),
                     ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(height: 45),
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: primaryColor.withOpacity(0.1),
-                          child: Text(
-                            student.name.isNotEmpty ? student.name[0].toUpperCase() : "?",
-                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: primaryColor),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          student.name,
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: slate900),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildStatusBadge(student.isGraduated, false),
-                        const SizedBox(height: 32),
-                        _buildDetailRow(Icons.person_outline, "Age", "${student.age} Years"),
-                        const Divider(height: 32),
-                        _buildDetailRow(Icons.calendar_month_outlined, "Joined Date",
-                            DateFormat('MMMM dd, yyyy').format(student.joinedAt)),
-                        const Divider(height: 32),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+
+                    // Scrollable Content area
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+                      child: SingleChildScrollView(
+                        // <--- THIS FIXES THE OVERFLOW
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Row(
-                              children: [
-                                Icon(Icons.book_outlined, color: primaryColor, size: 18),
-                                const SizedBox(width: 8),
-                                Text("Registered Subjects", style: TextStyle(color: slate500, fontWeight: FontWeight.w600, fontSize: 12)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: student.subjects.map((s) => Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: scaffoldBg,
-                                  borderRadius: BorderRadius.circular(10),
+                            CircleAvatar(
+                              radius: 50,
+                              backgroundColor: primaryColor.withOpacity(0.1),
+                              child: Text(
+                                student.name.isNotEmpty
+                                    ? student.name[0].toUpperCase()
+                                    : "?",
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
                                 ),
-                                child: Text(s, style: TextStyle(color: slate900, fontSize: 13)),
-                              )).toList(),
+                              ),
                             ),
+                            const SizedBox(height: 16),
+                            Text(
+                              student.name,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: slate900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildStatusBadge(student.isGraduated, false),
+                            const SizedBox(height: 32),
+                            _buildDetailRow(
+                              Icons.person_outline,
+                              "Age",
+                              "${student.age} Years",
+                            ),
+                            const Divider(height: 32),
+                            _buildDetailRow(
+                              Icons.calendar_month_outlined,
+                              "Joined Date",
+                              DateFormat(
+                                'MMMM dd, yyyy',
+                              ).format(student.joinedAt),
+                            ),
+                            const Divider(height: 32),
+
+                            // Subjects Section
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.book_outlined,
+                                        color: primaryColor,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "Registered Subjects",
+                                        style: TextStyle(
+                                          color: slate500,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: student.subjects
+                                        .map(
+                                          (s) => Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: scaffoldBg,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              s,
+                                              style: TextStyle(
+                                                color: slate900,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -282,7 +370,10 @@ class Displaystudent extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: Icon(icon, color: primaryColor, size: 20),
         ),
         const SizedBox(width: 16),
@@ -290,9 +381,16 @@ class Displaystudent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label, style: TextStyle(color: slate500, fontSize: 11)),
-            Text(value, style: TextStyle(color: slate900, fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(
+              value,
+              style: TextStyle(
+                color: slate900,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -303,7 +401,13 @@ class Displaystudent extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(isMobile ? 16 : 20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 12 : 16),
@@ -312,17 +416,37 @@ class Displaystudent extends StatelessWidget {
             CircleAvatar(
               radius: isMobile ? 22 : 25,
               backgroundColor: primaryColor.withOpacity(0.1),
-              child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : "?",
-                  style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 18)),
+              child: Text(
+                student.name.isNotEmpty ? student.name[0].toUpperCase() : "?",
+                style: TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: isMobile ? 16 : 18,
+                ),
+              ),
             ),
             SizedBox(width: isMobile ? 12 : 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(student.name, style: TextStyle(fontSize: isMobile ? 14 : 16, fontWeight: FontWeight.bold, color: slate900), overflow: TextOverflow.ellipsis),
+                  Text(
+                    student.name,
+                    style: TextStyle(
+                      fontSize: isMobile ? 14 : 16,
+                      fontWeight: FontWeight.bold,
+                      color: slate900,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
-                  Text("Joined: ${DateFormat('MMM dd, yyyy').format(student.joinedAt)}", style: TextStyle(fontSize: isMobile ? 11 : 12, color: slate500)),
+                  Text(
+                    "Joined: ${DateFormat('MMM dd, yyyy').format(student.joinedAt)}",
+                    style: TextStyle(
+                      fontSize: isMobile ? 11 : 12,
+                      color: slate500,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -339,7 +463,13 @@ class Displaystudent extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,11 +477,28 @@ class Displaystudent extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: primaryColor.withOpacity(0.1),
-            child: Text(student.name.isNotEmpty ? student.name[0].toUpperCase() : "?", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+            child: Text(
+              student.name.isNotEmpty ? student.name[0].toUpperCase() : "?",
+              style: TextStyle(
+                color: primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const SizedBox(height: 12),
-          Text(student.name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: slate900), overflow: TextOverflow.ellipsis),
-          Text("Age: ${student.age}", style: TextStyle(fontSize: 11, color: slate500)),
+          Text(
+            student.name,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: slate900,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            "Age: ${student.age}",
+            style: TextStyle(fontSize: 11, color: slate500),
+          ),
           const Spacer(),
           _buildStatusBadge(student.isGraduated, false),
         ],
@@ -361,11 +508,23 @@ class Displaystudent extends StatelessWidget {
 
   Widget _buildStatusBadge(bool isGraduated, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 8, vertical: isMobile ? 3 : 4),
-      decoration: BoxDecoration(color: isGraduated ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 6 : 8,
+        vertical: isMobile ? 3 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: isGraduated
+            ? Colors.green.withOpacity(0.1)
+            : Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Text(
         isGraduated ? "GRADUATED" : "IN PROGRESS",
-        style: TextStyle(color: isGraduated ? Colors.green[700] : Colors.orange[700], fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: isGraduated ? Colors.green[700] : Colors.orange[700],
+          fontSize: isMobile ? 8 : 9,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

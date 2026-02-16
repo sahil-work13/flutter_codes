@@ -8,16 +8,8 @@ import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatelessWidget { // Changed to StatelessWidget
   const DashboardScreen({super.key});
-
-  @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedIndex = 0;
-  final Studentcontroller controller = Get.put(Studentcontroller());
 
   // --- OFFICIAL PRODUCTION PALETTE ---
   final Color primaryColor = const Color(0xFF6366F1);
@@ -25,7 +17,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final Color slate500 = const Color(0xFF64748B);
   final Color scaffoldBg = const Color(0xFFF8FAFC);
 
-  final List<String> _pageTitles = [
+  static final List<String> _pageTitles = [
     "Dashboard Overview",
     "Student Registration",
     "Student Directory",
@@ -43,31 +35,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Access the controller
+    final Studentcontroller controller = Get.find<Studentcontroller>();
+
     return LayoutBuilder(builder: (context, constraints) {
       final isMobile = constraints.maxWidth < 600;
       final isTablet = constraints.maxWidth >= 600 && constraints.maxWidth < 1200;
 
-      return Scaffold(
-        backgroundColor: scaffoldBg,
-        body: Row(
-          children: [
-            if (!isMobile) _buildSidebar(isTablet),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildHeader(isMobile),
-                  Expanded(child: _getPages(isMobile)[_selectedIndex]),
-                ],
-              ),
+      // Wrap in Obx to listen to index changes from anywhere in the app
+      return Obx(() => Scaffold(
+            backgroundColor: scaffoldBg,
+            body: Row(
+              children: [
+                if (!isMobile) _buildSidebar(isTablet, controller),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _buildHeader(isMobile, controller.selectedIndex.value),
+                      Expanded(
+                        child: IndexedStack( // Use IndexedStack to preserve scroll state
+                          index: controller.selectedIndex.value,
+                          children: _getPages(isMobile),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        bottomNavigationBar: isMobile ? _buildBottomNav() : null,
-      );
+            bottomNavigationBar: isMobile ? _buildBottomNav(controller) : null,
+          ));
     });
   }
 
-  Widget _buildHeader(bool isMobile) {
+  Widget _buildHeader(bool isMobile, int selectedIndex) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 40, vertical: 24),
       alignment: Alignment.centerLeft,
@@ -75,30 +76,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _pageTitles[_selectedIndex], // Dynamic Title based on index
+            _pageTitles[selectedIndex],
             style: TextStyle(
                 fontSize: isMobile ? 24 : 32,
                 fontWeight: FontWeight.bold,
-                color: slate900
-            ),
+                color: slate900),
           ),
           const SizedBox(height: 4),
           Text(
-              _selectedIndex == 0
+              selectedIndex == 0
                   ? "Real-time performance metrics"
                   : "Manage your system records",
-              style: TextStyle(color: slate500, fontSize: 14)
-          ),
+              style: TextStyle(color: slate500, fontSize: 14)),
         ],
       ),
     );
   }
 
   Widget _buildHomeContent(bool isMobile) {
+    final Studentcontroller controller = Get.find<Studentcontroller>();
     return Obx(() {
       final students = controller.students;
 
-      // DYNAMIC STATS
       final total = students.length;
       final graduated = students.where((s) => s.isGraduated).length;
       final activeSubjects = students.expand((s) => s.subjects).toSet().length;
@@ -108,18 +107,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40),
         child: Column(
           children: [
-            // Dynamic Cards with proper sizing
             Wrap(
               spacing: 24,
               runSpacing: 24,
               children: [
                 _buildStatCard("Total Students", total.toString(), Icons.people_rounded, isMobile),
                 _buildStatCard("Active Subjects", activeSubjects.toString(), Icons.auto_awesome_mosaic_rounded, isMobile),
-                _buildStatCard("Success Rate", "${total == 0 ? 0 : ((graduated/total)*100).toInt()}%", Icons.insights_rounded, isMobile),
+                _buildStatCard("Success Rate", "${total == 0 ? 0 : ((graduated / total) * 100).toInt()}%", Icons.insights_rounded, isMobile),
               ],
             ),
             const SizedBox(height: 40),
-            // Corrected Aesthetic Line Chart
             _buildAestheticLineChart(isMobile, students),
             const SizedBox(height: 40),
           ],
@@ -131,40 +128,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatCard(String title, String value, IconData icon, bool isMobile) {
     final isHovered = false.obs;
     return Obx(() => MouseRegion(
-      onEnter: (_) => isHovered.value = true,
-      onExit: (_) => isHovered.value = false,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: isMobile ? double.infinity : 280,
-        padding: const EdgeInsets.all(24),
-        transform: isHovered.value ? (Matrix4.identity()..translate(0, -10, 0)) : Matrix4.identity(),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: isHovered.value ? primaryColor.withOpacity(0.1) : Colors.black.withOpacity(0.02),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: primaryColor, size: 32),
-            const SizedBox(height: 20),
-            Text(value, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: slate900)),
-            Text(title, style: TextStyle(color: slate500, fontWeight: FontWeight.w500, fontSize: 14)),
-          ],
-        ),
-      ),
-    ));
+          onEnter: (_) => isHovered.value = true,
+          onExit: (_) => isHovered.value = false,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: isMobile ? double.infinity : 280,
+            padding: const EdgeInsets.all(24),
+            transform: isHovered.value ? (Matrix4.identity()..translate(0, -10, 0)) : Matrix4.identity(),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: isHovered.value ? primaryColor.withOpacity(0.1) : Colors.black.withOpacity(0.02),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: primaryColor, size: 32),
+                const SizedBox(height: 20),
+                Text(value, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: slate900)),
+                Text(title, style: TextStyle(color: slate500, fontWeight: FontWeight.w500, fontSize: 14)),
+              ],
+            ),
+          ),
+        ));
   }
 
-  // --- DYNAMIC LINE CHART (Corrected & Aesthetic) ---
   Widget _buildAestheticLineChart(bool isMobile, List<StudentModel> students) {
-    // Generate Last 6 Months Labels and Data
     List<DateTime> months = List.generate(6, (i) => DateTime.now().subtract(Duration(days: i * 30))).reversed.toList();
     List<FlSpot> spots = [];
 
@@ -174,7 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 32, 32, 20), // Added padding for labels
+      padding: const EdgeInsets.fromLTRB(20, 32, 32, 20),
       height: 400,
       decoration: BoxDecoration(
         color: Colors.white,
@@ -199,11 +194,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                       sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: TextStyle(color: slate500, fontSize: 12)),
-                      )
-                  ),
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: TextStyle(color: slate500, fontSize: 12)),
+                  )),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -221,7 +215,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: spots.isEmpty ? [const FlSpot(0,0)] : spots,
+                    spots: spots.isEmpty ? [const FlSpot(0, 0)] : spots,
                     isCurved: true,
                     color: primaryColor,
                     barWidth: 4,
@@ -245,7 +239,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSidebar(bool isTablet) {
+  Widget _buildSidebar(bool isTablet, Studentcontroller controller) {
     return Container(
       width: isTablet ? 80 : 250,
       decoration: BoxDecoration(border: Border(right: BorderSide(color: Colors.grey[100]!))),
@@ -268,8 +262,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: NavigationRail(
               extended: !isTablet,
               backgroundColor: Colors.white,
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+              selectedIndex: controller.selectedIndex.value,
+              onDestinationSelected: (index) => controller.changeTab(index),
               destinations: const [
                 NavigationRailDestination(icon: Icon(Icons.dashboard_rounded), label: Text("Dashboard")),
                 NavigationRailDestination(icon: Icon(Icons.person_add_rounded), label: Text("Registration")),
@@ -283,10 +277,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(Studentcontroller controller) {
     return BottomNavigationBar(
-      currentIndex: _selectedIndex,
-      onTap: (index) => setState(() => _selectedIndex = index),
+      currentIndex: controller.selectedIndex.value,
+      onTap: (index) => controller.changeTab(index),
       selectedItemColor: primaryColor,
       unselectedItemColor: slate500,
       type: BottomNavigationBarType.fixed,

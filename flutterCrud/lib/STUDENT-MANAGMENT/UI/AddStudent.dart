@@ -147,48 +147,58 @@ class _AddStudentPageState extends State<AddStudentPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final student = StudentModel(
-                      id: editingStudent?.id,
-                      name: nameController.text,
-                      age: int.parse(ageController.text),
-                      isGraduated: isGraduated,
-                      joinedAt: selectedDate,
-                      subjects: selectedSubjects,
-                    );
+  if (_formKey.currentState!.validate()) {
+    final student = StudentModel(
+      id: editingStudent?.id,
+      name: nameController.text,
+      age: int.parse(ageController.text),
+      isGraduated: isGraduated,
+      joinedAt: selectedDate,
+      subjects: selectedSubjects,
+    );
 
-                    if (editingStudent == null) {
-                      await controller.add(student);
-                      // Close the page/dialog FIRST
-                      Get.back();
-                      // Then show the success message on the underlying screen
-                      Get.snackbar(
-                        "Success",
-                        "Student records saved.",
-                        snackPosition: SnackPosition.TOP,
-                        backgroundColor: Colors.green,colorText: Colors.white,
-                        margin: const EdgeInsets.all(15),
-                      );
-                      nameController.clear();
-                      ageController.clear();
-                      selectedDate = DateTime.now(); // Reset to current date
-                      isGraduated = false;           // Reset checkbox/switch
-                      selectedSubjects = [];         // Clear the list of subjects
-                      editingStudent = null;
-                    } else {
-                      await controller.updateStudent(student);
-                      // Navigate to the list and clear the stack
-                      Get.off(() => Displaystudent());
-                      Get.snackbar(
-                        "Updated",
-                        "Student details updated successfully.",
-                        snackPosition: SnackPosition.TOP,
-                          backgroundColor: Colors.green,colorText: Colors.white,
-                        margin: const EdgeInsets.all(15),
-                      );
-                    }
-                  }
-                },
+    if (editingStudent == null) {
+      // 1. ADD NEW STUDENT
+      await controller.add(student);
+      
+      // FIX: Tell the controller to switch the Dashboard to the List tab (Index 2)
+      controller.changeTab(2);
+      
+      Get.snackbar(
+        "Success", "Student records saved.",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green, colorText: Colors.white,
+        margin: const EdgeInsets.all(15),
+      );
+      
+      // Reset fields
+      nameController.clear();
+      ageController.clear();
+      setState(() { // Use setState if these are local variables in the UI
+        selectedDate = DateTime.now();
+        isGraduated = false;
+        selectedSubjects = [];
+      });
+      
+    } else {
+      // 2. UPDATE EXISTING STUDENT
+      await controller.updateStudent(student);
+
+      // FIX: Close the Add/Edit page to reveal the Dashboard sitting underneath
+      Get.back(); 
+
+      // Ensure the Dashboard switches to the List tab
+      controller.changeTab(2);
+
+      Get.snackbar(
+        "Updated", "Student details updated successfully.",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green, colorText: Colors.white,
+        margin: const EdgeInsets.all(15),
+      );
+    }
+  }
+},
                 child: Text(
                   editingStudent == null ? "Save Student" : "Update Records",
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
