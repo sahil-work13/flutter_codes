@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/StudentController/StudentServices.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Dashboard.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/Signup.dart';
@@ -17,10 +18,14 @@ class Studentcontroller extends GetxController {
 
   @override
   void onInit() {
-    students.bindStream(_service.getStudent());
+    refreshStudentStream();
     super.onInit();
   }
 
+  void refreshStudentStream() {
+  // This binds the stream again using the new user context
+  students.bindStream(_service.getStudent());
+}
   // --- ADDED THIS METHOD: To handle global tab switching ---
   void changeTab(int index) {
     selectedIndex.value = index;
@@ -30,6 +35,7 @@ class Studentcontroller extends GetxController {
     try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
       await FirebaseAuth.instance.signInWithPopup(googleProvider);
+      refreshStudentStream();
       Get.offAll(() => const DashboardScreen());
     } on FirebaseAuthException catch (e) {
       print("Google Sign-In Error: ${e.code}");
@@ -40,21 +46,55 @@ class Studentcontroller extends GetxController {
 
   Future<void> signUpWithEmailAndPassword(String email, String password) async {
     try {
-      isLoading.value = true;
-      await _auth.createUserWithEmailAndPassword(email: email, password: password);
-      Get.offAll(() => const DashboardScreen());
+    isLoading.value = true;
+
+    try {
+      // 1. Attempt to Login first
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      print("Login Successful");
     } on FirebaseAuthException catch (e) {
-      Get.snackbar("Error", e.message ?? "Signup Failed");
-    } finally {
-      isLoading.value = false;
+      // 2. If user is not found, attempt to Sign Up
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        print("User not found, attempting signup...");
+        await _auth.createUserWithEmailAndPassword(email: email, password: password);
+        print("Signup Successful");
+      } else {
+        // Re-throw if it's a different error (like wrong password)
+        rethrow;
+      }
     }
+
+    // 3. Common logic after successful Auth
+    refreshStudentStream();
+    Get.offAll(() => const DashboardScreen());
+    
+  } on FirebaseAuthException catch (e) {
+    // Handle specific errors like 'wrong-password' or 'invalid-email'
+    String message = "Authentication Failed";
+    if (e.code == 'wrong-password') message = "Incorrect password.";
+    if (e.code == 'invalid-email') message = "The email address is badly formatted.";
+    
+    Get.snackbar("Auth Error", message, 
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red.withOpacity(0.7),
+      colorText: Colors.white
+    );
+  } finally {
+    isLoading.value = false;
+  }
   }
 
   Future<void> add(StudentModel student) async {
     isLoading.value = true;
-    await _service.addStudent(student);
+    String? currentUid = _auth.currentUser?.uid; 
+
+    if (currentUid != null) {
+      
+      await _service.addStudent(student, currentUid);
+    } else {
+      Get.snackbar("Error", "User not logged in");
+    }
     isLoading.value = false;
-    // Automatically switch to List tab after adding
     changeTab(2); 
   }
 

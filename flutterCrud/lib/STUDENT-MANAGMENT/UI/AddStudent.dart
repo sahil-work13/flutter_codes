@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/UI/DisplayStudent.dart';
 import 'package:fluttercrud/STUDENT-MANAGMENT/model/StudentModel.dart';
@@ -151,6 +152,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
     final student = StudentModel(
       id: editingStudent?.id,
       name: nameController.text,
+      userId: FirebaseAuth.instance.currentUser!.uid,
       age: int.parse(ageController.text),
       isGraduated: isGraduated,
       joinedAt: selectedDate,
